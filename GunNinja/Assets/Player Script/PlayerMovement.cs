@@ -9,59 +9,102 @@ public class PlayerMovement : MonoBehaviour
     float accel;
     float maxSpeed;
     float distToGround;
+
+    float jumpStrength;
+    bool doublejump;
+
+    public float sensitivity = 4f;
+    public float maxYAngle = 80f;
+    private Vector2 currentRotation;
+
     // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         cam = Camera.main;
-        accel = 1.0f;
-        maxSpeed = 15;  // max horizontal speed
+        accel = 1.5f;
+        maxSpeed = 8;  // max horizontal speed
         distToGround = GetComponent<Collider>().bounds.extents.y;
+        jumpStrength = 6;
+        doublejump = true;
     }
 
+    //private void Update()
+    //{
+    //    // get inputs
+
+    //}
+
     // Update is called once per frame
-    void FixedUpdate()
+    void Update()
     {
+        // camera control
+        currentRotation.x += Input.GetAxis("Mouse X") * sensitivity;
+        currentRotation.y -= Input.GetAxis("Mouse Y") * sensitivity;
+        currentRotation.x = Mathf.Repeat(currentRotation.x, 360);
+        currentRotation.y = Mathf.Clamp(currentRotation.y, -maxYAngle, maxYAngle);
+        rb.transform.rotation = Quaternion.Euler(currentRotation.y, currentRotation.x, 0);
+        cam.transform.rotation = Quaternion.Euler(currentRotation.y, currentRotation.x, 0);
+        if (Input.GetMouseButtonDown(0))
+            Cursor.lockState = CursorLockMode.Locked;
+
         // horizontal speed
         float hSpeed = Mathf.Sqrt(rb.velocity.x * rb.velocity.x + rb.velocity.z * rb.velocity.z);
         bool isGrounded = OnGround();
             
         if (isGrounded)
         {
-            rb.drag = 10;
-            accel = 1.0f;
-            // stop character from flying going over small ramps
-            rb.AddForce(Physics.gravity * (rb.mass * rb.mass));
+            rb.drag = 5;
+            accel = 1.5f;
+            doublejump = true;
+            if (Input.GetKeyDown("space"))
+            {
+                rb.velocity = new Vector3(0, jumpStrength, 0);
+                rb.transform.position += new Vector3(0, 0.1f, 0);
+            }
+            else
+            {
+                // stop character from flying going over small ramps
+                Ray ray = new Ray(rb.transform.position + new Vector3(0, 0.1f, 0), -Vector3.up);
+                RaycastHit rayHit;
+                if (Physics.Raycast(ray, out rayHit, distToGround + 0.2f)) {
+                    rb.MovePosition(rb.transform.position + new Vector3(0, - rayHit.distance + distToGround + 0.1f, 0));
+                }
+            }
         } 
         else
         {
             rb.drag = 0.2f;
             accel = 0.1f;
+            if (doublejump && Input.GetKeyDown("space"))
+            {
+                doublejump = false;
+                if (rb.velocity.y < 0) { rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z); }
+                rb.velocity += new Vector3(0, jumpStrength, 0);
+                accel = 1.5f;
+            }
         }
 
-        if (isGrounded && Input.GetKeyDown("space"))
-        {
-            rb.velocity = new Vector3(0, 8, 0);
-        }
-        
         if(hSpeed < maxSpeed)
         {
+            var vect = new Vector3(0, 0, 0);
             if (Input.GetKey("w"))
             {
-                rb.velocity += new Vector3(accel, 0, 0);
+                vect = new Vector3(rb.transform.forward.x, 0, rb.transform.forward.z).normalized;
             }
             if (Input.GetKey("s"))
             {
-                rb.velocity += new Vector3(-accel, 0, 0);
+                vect = new Vector3(- rb.transform.forward.x, 0, - rb.transform.forward.z).normalized;
             }
             if (Input.GetKey("a"))
             {
-                rb.velocity += new Vector3(0, 0, accel);
+                vect = new Vector3(-rb.transform.right.x, 0, -rb.transform.right.z).normalized;
             }
             if (Input.GetKey("d"))
             {
-                rb.velocity += new Vector3(0, 0, -accel);
+                vect = new Vector3(rb.transform.right.x, 0, rb.transform.right.z).normalized;
             }
+            rb.velocity += vect * accel;
 
             // limit running speed
             hSpeed = Mathf.Sqrt(rb.velocity.x * rb.velocity.x + rb.velocity.z * rb.velocity.z);
@@ -74,6 +117,10 @@ public class PlayerMovement : MonoBehaviour
 
     bool OnGround()
     {
-        return Physics.Raycast(rb.transform.position, -Vector3.up, distToGround + 0.1f);
+        return Physics.Raycast(rb.transform.position, -Vector3.up, distToGround + 0.1f)
+            || Physics.Raycast(rb.transform.position + new Vector3(0.25f, 0, 0), -Vector3.up, distToGround + 0.05f)
+            || Physics.Raycast(rb.transform.position + new Vector3(-0.25f, 0, 0), -Vector3.up, distToGround + 0.05f)
+            || Physics.Raycast(rb.transform.position + new Vector3(0, 0, 0.25f), -Vector3.up, distToGround + 0.05f)
+            || Physics.Raycast(rb.transform.position + new Vector3(0, 0, -0.25f), -Vector3.up, distToGround + 0.05f);
     }
 }
