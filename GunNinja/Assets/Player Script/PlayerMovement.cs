@@ -8,23 +8,38 @@ public class PlayerMovement : MonoBehaviour
     Camera cam;
     float accel;
     float maxSpeed;
+    float distToGround;
     // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         cam = Camera.main;
         accel = 1.0f;
-        maxSpeed = 15;
+        maxSpeed = 15;  // max horizontal speed
+        distToGround = GetComponent<Collider>().bounds.extents.y;
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
-        // cam.transform.localEulerAngles
         // horizontal speed
         float hSpeed = Mathf.Sqrt(rb.velocity.x * rb.velocity.x + rb.velocity.z * rb.velocity.z);
+        bool isGrounded = OnGround();
+            
+        if (isGrounded)
+        {
+            rb.drag = 10;
+            accel = 1.0f;
+            // stop character from flying going over small ramps
+            rb.AddForce(Physics.gravity * (rb.mass * rb.mass));
+        } 
+        else
+        {
+            rb.drag = 0.2f;
+            accel = 0.1f;
+        }
 
-        if (Input.GetKeyDown("space"))
+        if (isGrounded && Input.GetKeyDown("space"))
         {
             rb.velocity = new Vector3(0, 8, 0);
         }
@@ -55,5 +70,10 @@ public class PlayerMovement : MonoBehaviour
                 rb.velocity = new Vector3(rb.velocity.x * maxSpeed / hSpeed, rb.velocity.y, rb.velocity.z * maxSpeed / hSpeed);
             }
         }
+    }
+
+    bool OnGround()
+    {
+        return Physics.Raycast(rb.transform.position, -Vector3.up, distToGround + 0.1f);
     }
 }
