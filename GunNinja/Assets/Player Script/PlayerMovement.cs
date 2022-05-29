@@ -8,7 +8,12 @@ public class PlayerMovement : MonoBehaviour
     Rigidbody rb;
     Camera cam;
     float accel;
-    public float maxSpeed = 10;
+
+    float groundAccel = 1.0f;
+    float groundDrag = 10f;
+    float airAccel = 0.02f;
+    float airDrag = 0.25f;
+    float maxRunSpeed = 8;  // soft max speed
     float distToGround;
 
     float jumpStrength = 8f;
@@ -26,7 +31,7 @@ public class PlayerMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         cam = Camera.main;
-        accel = 1.2f;
+        accel = groundAccel;
         distToGround = GetComponent<Collider>().bounds.extents.y;
         hasDoubleJump = true;
         Cursor.lockState = CursorLockMode.Locked;
@@ -52,8 +57,8 @@ public class PlayerMovement : MonoBehaviour
             
         if (isGrounded)
         {
-            rb.drag = 10;
-            accel = 1.0f;
+            rb.drag = groundDrag;
+            accel = groundAccel;
             hasDoubleJump = true;
             if (keys.spaceKey.wasPressedThisFrame)
             {
@@ -72,15 +77,15 @@ public class PlayerMovement : MonoBehaviour
         } 
         else
         {
-            rb.drag = 0.4f;
-            accel = 0.02f;
+            rb.drag = airDrag;
+            accel = airAccel;
             if (hasDoubleJump && keys.spaceKey.wasPressedThisFrame)
             {
                 hasDoubleJump = false;
                 // soft reset if falling downwards
                 if (rb.velocity.y < 0) { rb.velocity = new Vector3(rb.velocity.x, rb.velocity.y * 0.25f, rb.velocity.z); }
                 rb.velocity += new Vector3(0, jumpStrength * 0.75f, 0);
-                accel = 1.2f;
+                accel = groundAccel;  // burst of acceleration during double jump
             }
         }
 
@@ -104,13 +109,15 @@ public class PlayerMovement : MonoBehaviour
         }
         rb.velocity += vect * accel;
 
-        // limit running speed
+        // limit running speed above the max speed
         hSpeed = Mathf.Sqrt(rb.velocity.x * rb.velocity.x + rb.velocity.z * rb.velocity.z);
-        if (hSpeed > maxSpeed && isGrounded)
+        if (hSpeed > maxRunSpeed && isGrounded)
         {
-            rb.velocity = new Vector3(rb.velocity.x * maxSpeed / hSpeed, rb.velocity.y, rb.velocity.z * maxSpeed / hSpeed);
+            rb.velocity = rb.velocity - (rb.velocity.normalized * Mathf.Pow(rb.velocity.magnitude - maxRunSpeed, 2) * 0.1f);
+            // rb.drag = groundDrag * 3;
         }
-        Debug.Log("horizontal speed: " + Mathf.Sqrt(rb.velocity.x * rb.velocity.x + rb.velocity.z * rb.velocity.z));
+        // Debug.Log("horizontal speed: " + Mathf.Sqrt(rb.velocity.x * rb.velocity.x + rb.velocity.z * rb.velocity.z));
+        Debug.Log("speed :" + rb.velocity.magnitude);
     }
 
     bool OnGround()

@@ -5,9 +5,10 @@ using UnityEngine.InputSystem;
 
 public class GrappleHook : MonoBehaviour
 {
-    public float hookRange = 40;
-    float pullAccel = 0.08f;
-    float maxPullSpeed = 40f;
+    float hookRange = 50;
+    float pullAccel = 0.1f;
+    float softMaxPullSpeed = 30f;  // beyond this point, there will be a lot more "air resistance"
+    float highVelocityDrag = 0.75f;  // drag coefficient when over softMaxPullpeed
     Rigidbody rb;
     PlayerMovement otherScript;
 
@@ -17,7 +18,7 @@ public class GrappleHook : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        
+        grapplePoint = new Vector3(0, 0, 0);
         otherScript = GetComponent<PlayerMovement>();
     }
 
@@ -44,7 +45,7 @@ public class GrappleHook : MonoBehaviour
             }
         }
 
-        // release grapple on keyup
+        // release grapple on keyup, otherwise pull towards point
         if (otherScript.isGrappling)
         {
             if (mouse.rightButton.wasReleasedThisFrame)
@@ -53,15 +54,22 @@ public class GrappleHook : MonoBehaviour
             } else
             {
                 Vector3 vect = (grapplePoint - rb.transform.position).normalized;
-                // reduce accel when near the maximum
                 rb.velocity += vect * pullAccel;
-                if (rb.velocity.magnitude > maxPullSpeed)
-                {
-                    rb.velocity = rb.velocity * (maxPullSpeed / rb.velocity.magnitude);
-                }
             }
         }
 
-
+        // greatly slow down in the air if over a certain speed
+        if (!otherScript.isGrounded || !otherScript.isGrappling) {
+            if (rb.velocity.magnitude > softMaxPullSpeed)
+            {
+                {
+                    rb.velocity = rb.velocity - (rb.velocity.normalized * Mathf.Pow(rb.velocity.magnitude - softMaxPullSpeed, 2) * highVelocityDrag * 0.001f);
+                }
+            }
+        }
+    }
+    void OnDrawGizmos()
+    {
+         Gizmos.DrawSphere(grapplePoint, 0.15f);
     }
 }
