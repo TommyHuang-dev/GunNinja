@@ -1,20 +1,24 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour
 {
     Rigidbody rb;
     Camera cam;
     float accel;
-    float maxSpeed;
+    public float maxSpeed = 10;
     float distToGround;
 
-    float jumpStrength;
-    bool doublejump;
+    float jumpStrength = 8f;
+    public bool hasDoubleJump;
 
-    public float sensitivity = 4f;
-    public float maxYAngle = 80f;
+    public bool isGrounded = false;
+    public bool isGrappling = false;
+
+    private float sensitivity = 0.5f;
+    private float maxYAngle = 80f;
     private Vector2 currentRotation;
 
     // Start is called before the first frame update
@@ -23,43 +27,37 @@ public class PlayerMovement : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         cam = Camera.main;
         accel = 1.2f;
-        maxSpeed = 10;  // max horizontal speed
         distToGround = GetComponent<Collider>().bounds.extents.y;
-        jumpStrength = 8;
-        doublejump = true;
+        hasDoubleJump = true;
+        Cursor.lockState = CursorLockMode.Locked;
     }
-
-    //private void Update()
-    //{
-    //    // get inputs
-
-    //}
 
     // Update is called once per frame
     void Update()
     {
+        var keys = Keyboard.current;
+        var pointer = Pointer.current;
+
         // camera control
-        currentRotation.x += Input.GetAxis("Mouse X") * sensitivity;
-        currentRotation.y -= Input.GetAxis("Mouse Y") * sensitivity;
+        currentRotation.x += pointer.delta.x.ReadValue() * 0.1f * sensitivity;
+        currentRotation.y -= pointer.delta.y.ReadValue() * 0.1f * sensitivity;
         currentRotation.x = Mathf.Repeat(currentRotation.x, 360);
         currentRotation.y = Mathf.Clamp(currentRotation.y, -maxYAngle, maxYAngle);
         rb.transform.rotation = Quaternion.Euler(currentRotation.y, currentRotation.x, 0);
         cam.transform.rotation = Quaternion.Euler(currentRotation.y, currentRotation.x, 0);
-        if (Input.GetMouseButtonDown(0))
-            Cursor.lockState = CursorLockMode.Locked;
 
         // horizontal speed
         float hSpeed = Mathf.Sqrt(rb.velocity.x * rb.velocity.x + rb.velocity.z * rb.velocity.z);
-        bool isGrounded = OnGround();
+        isGrounded = OnGround() && !isGrappling;
             
         if (isGrounded)
         {
-            rb.drag = 8;
-            accel = 1.2f;
-            doublejump = true;
-            if (Input.GetKeyDown("space"))
+            rb.drag = 10;
+            accel = 1.0f;
+            hasDoubleJump = true;
+            if (keys.spaceKey.wasPressedThisFrame)
             {
-                rb.velocity = new Vector3(0, jumpStrength, 0);
+                rb.velocity += new Vector3(0, jumpStrength, 0);
                 rb.transform.position += new Vector3(0, 0.1f, 0);
             }
             else
@@ -74,45 +72,45 @@ public class PlayerMovement : MonoBehaviour
         } 
         else
         {
-            rb.drag = 0.2f;
-            accel = 0.05f;
-            if (doublejump && Input.GetKeyDown("space"))
+            rb.drag = 0.4f;
+            accel = 0.02f;
+            if (hasDoubleJump && keys.spaceKey.wasPressedThisFrame)
             {
-                doublejump = false;
-                if (rb.velocity.y < 0) { rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z); }
-                rb.velocity += new Vector3(0, jumpStrength * 0.8f, 0);
+                hasDoubleJump = false;
+                // soft reset if falling downwards
+                if (rb.velocity.y < 0) { rb.velocity = new Vector3(rb.velocity.x, rb.velocity.y * 0.25f, rb.velocity.z); }
+                rb.velocity += new Vector3(0, jumpStrength * 0.75f, 0);
                 accel = 1.2f;
             }
         }
 
-        if(hSpeed < maxSpeed)
+        // todo fix this with airstrafing
+        var vect = new Vector3(0, 0, 0);
+        if (keys.wKey.isPressed)
         {
-            var vect = new Vector3(0, 0, 0);
-            if (Input.GetKey("w"))
-            {
-                vect = (vect + new Vector3(rb.transform.forward.x, 0, rb.transform.forward.z).normalized).normalized;
-            }
-            if (Input.GetKey("s"))
-            {
-                vect = (vect +new Vector3(- rb.transform.forward.x, 0, - rb.transform.forward.z).normalized).normalized;
-            }
-            if (Input.GetKey("a"))
-            {
-                vect = (vect + new Vector3(-rb.transform.right.x, 0, -rb.transform.right.z).normalized).normalized;
-            }
-            if (Input.GetKey("d"))
-            {
-                vect = (vect + new Vector3(rb.transform.right.x, 0, rb.transform.right.z).normalized).normalized;
-            }
-            rb.velocity += vect * accel;
-
-            // limit running speed
-            hSpeed = Mathf.Sqrt(rb.velocity.x * rb.velocity.x + rb.velocity.z * rb.velocity.z);
-            if (hSpeed > maxSpeed)
-            {
-                rb.velocity = new Vector3(rb.velocity.x * maxSpeed / hSpeed, rb.velocity.y, rb.velocity.z * maxSpeed / hSpeed);
-            }
+            vect = (vect + new Vector3(rb.transform.forward.x, 0, rb.transform.forward.z).normalized).normalized;
         }
+        if (keys.sKey.isPressed)
+        {
+            vect = (vect +new Vector3(- rb.transform.forward.x, 0, - rb.transform.forward.z).normalized).normalized;
+        }
+        if (keys.aKey.isPressed)
+        {
+            vect = (vect + new Vector3(-rb.transform.right.x, 0, -rb.transform.right.z).normalized).normalized;
+        }
+        if (keys.dKey.isPressed)
+        {
+            vect = (vect + new Vector3(rb.transform.right.x, 0, rb.transform.right.z).normalized).normalized;
+        }
+        rb.velocity += vect * accel;
+
+        // limit running speed
+        hSpeed = Mathf.Sqrt(rb.velocity.x * rb.velocity.x + rb.velocity.z * rb.velocity.z);
+        if (hSpeed > maxSpeed && isGrounded)
+        {
+            rb.velocity = new Vector3(rb.velocity.x * maxSpeed / hSpeed, rb.velocity.y, rb.velocity.z * maxSpeed / hSpeed);
+        }
+        Debug.Log("horizontal speed: " + Mathf.Sqrt(rb.velocity.x * rb.velocity.x + rb.velocity.z * rb.velocity.z));
     }
 
     bool OnGround()
