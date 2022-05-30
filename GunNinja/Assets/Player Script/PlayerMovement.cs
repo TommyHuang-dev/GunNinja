@@ -133,8 +133,13 @@ public class PlayerMovement : MonoBehaviour
         }
 
         rb.velocity = newVelVect;
+        // DEBUGGING CHEAT
+        if (keys.fKey.wasPressedThisFrame)
+        {
+            rb.velocity += rb.transform.forward * 100;
+        }
+        // -----
 
-        
 
         Debug.Log("horizontal speed :" + horizSpeed(rb.velocity));
     }
