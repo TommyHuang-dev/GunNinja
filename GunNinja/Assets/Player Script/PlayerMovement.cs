@@ -10,13 +10,13 @@ public class PlayerMovement : MonoBehaviour
     float accel;
 
     float groundAccel = 1.0f;
-    float groundDrag = 10f;
-    float airAccel = 0.02f;
-    float airDrag = 0.25f;
-    float maxRunSpeed = 8;  // soft max speed
+    float groundDrag = 8f;
+    float airAccel = 0.04f;
+    float airDrag = 0.2f;
+    float maxRunSpeed = 10;  // soft max speed
     float distToGround;
 
-    float jumpStrength = 8f;
+    float jumpStrength = 10f;
     public bool hasDoubleJump;
 
     public bool isGrounded = false;
@@ -84,41 +84,71 @@ public class PlayerMovement : MonoBehaviour
                 hasDoubleJump = false;
                 // soft reset if falling downwards
                 if (rb.velocity.y < 0) { rb.velocity = new Vector3(rb.velocity.x, rb.velocity.y * 0.25f, rb.velocity.z); }
-                rb.velocity += new Vector3(0, jumpStrength * 0.75f, 0);
-                accel = groundAccel;  // burst of acceleration during double jump
+                rb.velocity += new Vector3(0, jumpStrength * 0.6f, 0);
+                accel = groundAccel * 2;  // burst of acceleration during double jump
             }
         }
 
-        // todo fix this with airstrafing
-        var vect = new Vector3(0, 0, 0);
+        var dirVect = new Vector3(0, 0, 0);
         if (keys.wKey.isPressed)
         {
-            vect = (vect + new Vector3(rb.transform.forward.x, 0, rb.transform.forward.z).normalized).normalized;
+            dirVect = (dirVect + new Vector3(rb.transform.forward.x, 0, rb.transform.forward.z).normalized).normalized;
         }
         if (keys.sKey.isPressed)
         {
-            vect = (vect +new Vector3(- rb.transform.forward.x, 0, - rb.transform.forward.z).normalized).normalized;
+            dirVect = (dirVect +new Vector3(- rb.transform.forward.x, 0, - rb.transform.forward.z).normalized).normalized;
         }
         if (keys.aKey.isPressed)
         {
-            vect = (vect + new Vector3(-rb.transform.right.x, 0, -rb.transform.right.z).normalized).normalized;
+            dirVect = (dirVect + new Vector3(-rb.transform.right.x, 0, -rb.transform.right.z).normalized).normalized;
         }
         if (keys.dKey.isPressed)
         {
-            vect = (vect + new Vector3(rb.transform.right.x, 0, rb.transform.right.z).normalized).normalized;
+            dirVect = (dirVect + new Vector3(rb.transform.right.x, 0, rb.transform.right.z).normalized).normalized;
         }
-        rb.velocity += vect * accel;
 
-        // limit running speed above the max speed
-        hSpeed = Mathf.Sqrt(rb.velocity.x * rb.velocity.x + rb.velocity.z * rb.velocity.z);
-        if (hSpeed > maxRunSpeed && isGrounded)
+        Vector3 curVelVect = rb.velocity;
+        Vector3 newVelVect = rb.velocity + accel * dirVect;
+
+        // counteract drag slightly if going in same direction
+        if (dirVect.magnitude != 0 && Vector3.Angle(horizVect(newVelVect), horizVect(curVelVect)) < 60)
         {
-            rb.velocity = rb.velocity - (rb.velocity.normalized * Mathf.Pow(rb.velocity.magnitude - maxRunSpeed, 2) * 0.1f);
-            // rb.drag = groundDrag * 3;
+            float angleCoeff = 20f / (20f + Vector3.Angle(horizVect(newVelVect), horizVect(curVelVect)));
+            float coeff = 0.075f / 100;
+            if (isGrounded)
+            {
+                coeff *= 2f;
+            }
+            curVelVect += curVelVect.normalized * curVelVect.magnitude * rb.drag * coeff * angleCoeff;
         }
-        // Debug.Log("horizontal speed: " + Mathf.Sqrt(rb.velocity.x * rb.velocity.x + rb.velocity.z * rb.velocity.z));
-        Debug.Log("speed :" + rb.velocity.magnitude);
+
+        // limit running / air strafing speed
+        if (horizSpeed(newVelVect) > maxRunSpeed && horizSpeed(newVelVect) > horizSpeed(curVelVect))
+        {
+            // basically trying to "turn" the vector here instead of increasing it
+            newVelVect -= accel * curVelVect.normalized;
+            newVelVect.y = 0;
+            newVelVect = newVelVect.normalized * horizSpeed(curVelVect); 
+            newVelVect.y = curVelVect.y + accel * dirVect.y;
+        }
+
+        rb.velocity = newVelVect;
+
+        
+
+        Debug.Log("horizontal speed :" + horizSpeed(rb.velocity));
     }
+    Vector3 horizVect(Vector3 vel)
+    {
+        return new Vector3(vel.x, 0, vel.z);
+    }
+
+    // speed, ignoring the y direction
+    float horizSpeed(Vector3 vel)
+    {
+        return Mathf.Sqrt(vel.x * vel.x + vel.z * vel.z);
+    }
+
 
     bool OnGround()
     {

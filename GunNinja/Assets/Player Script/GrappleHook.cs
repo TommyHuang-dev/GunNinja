@@ -8,7 +8,7 @@ public class GrappleHook : MonoBehaviour
     float hookRange = 50;
     float pullAccel = 0.1f;
     float softMaxPullSpeed = 30f;  // beyond this point, there will be a lot more "air resistance"
-    float highVelocityDrag = 0.75f;  // drag coefficient when over softMaxPullpeed
+    float highVelocityDrag = 0.4f;  // drag coefficient when over softMaxPullpeed
     Rigidbody rb;
     PlayerMovement otherScript;
 
@@ -27,6 +27,7 @@ public class GrappleHook : MonoBehaviour
     {
         var mouse = Mouse.current;
         var cam = Camera.main;
+
         // try grapple on keydown
         if (!(otherScript.isGrappling))
         {
@@ -63,7 +64,7 @@ public class GrappleHook : MonoBehaviour
             if (rb.velocity.magnitude > softMaxPullSpeed)
             {
                 {
-                    rb.velocity = rb.velocity - (rb.velocity.normalized * Mathf.Pow(rb.velocity.magnitude - softMaxPullSpeed, 2) * highVelocityDrag * 0.001f);
+                    rb.velocity = rb.velocity - (rb.velocity.normalized * Mathf.Pow(rb.velocity.magnitude - softMaxPullSpeed + 1, 2) * highVelocityDrag * 0.001f);
                 }
             }
         }
