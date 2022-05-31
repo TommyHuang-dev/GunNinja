@@ -140,7 +140,7 @@ public class PlayerMovement : MonoBehaviour
             rb.velocity += rb.transform.forward * 100;
         }
         // -----
-        //Debug.Log("horizontal speed :" + horizSpeed(rb.velocity));
+        Debug.Log("horizontal speed :" + horizSpeed(rb.velocity));
     }
     Vector3 horizVect(Vector3 vel)
     {
