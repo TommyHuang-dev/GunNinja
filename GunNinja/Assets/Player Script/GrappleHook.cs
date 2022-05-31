@@ -12,7 +12,8 @@ public class GrappleHook : MonoBehaviour
     Rigidbody rb;
     PlayerMovement otherScript;
 
-    Vector3 grapplePoint;
+    Vector3 grapplePoint = new Vector3(0, 0, 0);
+    GameObject hitObject;
 
     // Start is called before the first frame update
     void Start()
@@ -27,35 +28,54 @@ public class GrappleHook : MonoBehaviour
     {
         var mouse = Mouse.current;
         var cam = Camera.main;
-
         // try grapple on keydown
         if (!(otherScript.isGrappling))
         {
             if (mouse.rightButton.wasPressedThisFrame)
             {
-                Vector3 targetPos = cam.transform.position + rb.transform.forward * hookRange; // since crosshair is above player
-                Ray ray = new Ray(rb.transform.position, targetPos - rb.transform.position);
+                float camPosDiff = Mathf.Sqrt(Mathf.Pow(cam.transform.localPosition.z * rb.transform.localScale.z, 2) + Mathf.Pow(cam.transform.localPosition.x * rb.transform.localScale.x, 2));
+                Vector3 startPos = cam.transform.position + cam.transform.forward * camPosDiff;
+                Vector3 targetPos = startPos + cam.transform.forward * hookRange;
+
+                Ray ray = new Ray(startPos, (targetPos - startPos).normalized);
                 RaycastHit rayHit;
                 if (Physics.Raycast(ray, out rayHit, hookRange))
                 {
                     otherScript.isGrappling = true;
                     otherScript.hasDoubleJump = true;
                     grapplePoint = rayHit.point;
+                    hitObject = rayHit.collider.gameObject;
+                } else
+                {
+                    Debug.DrawRay(rb.transform.position, targetPos - rb.transform.position, Color.black, 0.2f);
                 }
-                Debug.DrawRay(rb.transform.position, targetPos - rb.transform.position, color: Color.black, duration: 0.5f);
             }
         }
 
-        // release grapple on keyup, otherwise pull towards point
         if (otherScript.isGrappling)
         {
+            // release grapple on keyup
             if (mouse.rightButton.wasReleasedThisFrame)
             {
                 otherScript.isGrappling = false;
-            } else
+            }
+            // otherwise pull towards point
+            else
             {
-                Vector3 vect = (grapplePoint - rb.transform.position).normalized;
-                rb.velocity += vect * pullAccel;
+                Vector3 pullVect = (grapplePoint - rb.transform.position).normalized;
+
+                // 10: Game Physics Objects also get pulled towards the player, player might get pulled less
+                if (hitObject.layer == 10 && hitObject.GetComponent<Rigidbody>() != null)
+                {
+                    Rigidbody targetRB = hitObject.GetComponent<Rigidbody>();
+                    rb.velocity += pullVect * pullAccel * Mathf.Clamp(targetRB.mass / rb.mass, 0.25f, 1);
+                    targetRB.velocity -= (pullVect * pullAccel) * Mathf.Min(rb.mass / targetRB.mass, 2);
+                    grapplePoint += targetRB.velocity * Time.deltaTime;
+                }
+                else
+                {
+                    rb.velocity += pullVect * pullAccel;
+                }
             }
         }
 
@@ -71,6 +91,11 @@ public class GrappleHook : MonoBehaviour
     }
     void OnDrawGizmos()
     {
-         Gizmos.DrawSphere(grapplePoint, 0.15f);
+        if (grapplePoint.x != 0 && grapplePoint.y != 0 && otherScript.isGrappling)
+        {
+            Gizmos.color = Color.black;
+            Gizmos.DrawSphere(grapplePoint, 0.15f);
+            Gizmos.DrawLine(rb.transform.position, grapplePoint);
+        }
     }
 }

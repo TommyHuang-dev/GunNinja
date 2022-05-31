@@ -53,7 +53,7 @@ public class PlayerMovement : MonoBehaviour
 
         // horizontal speed
         float hSpeed = Mathf.Sqrt(rb.velocity.x * rb.velocity.x + rb.velocity.z * rb.velocity.z);
-        isGrounded = OnGround() && !isGrappling;
+        isGrounded = OnGround();
             
         if (isGrounded)
         {
@@ -133,15 +133,14 @@ public class PlayerMovement : MonoBehaviour
         }
 
         rb.velocity = newVelVect;
+
         // DEBUGGING CHEAT
         if (keys.fKey.wasPressedThisFrame)
         {
             rb.velocity += rb.transform.forward * 100;
         }
         // -----
-
-
-        Debug.Log("horizontal speed :" + horizSpeed(rb.velocity));
+        //Debug.Log("horizontal speed :" + horizSpeed(rb.velocity));
     }
     Vector3 horizVect(Vector3 vel)
     {
@@ -157,10 +156,11 @@ public class PlayerMovement : MonoBehaviour
 
     bool OnGround()
     {
+        float dist = 0.1f;
         return Physics.Raycast(rb.transform.position, -Vector3.up, distToGround + 0.1f)
-            || Physics.Raycast(rb.transform.position + new Vector3(0.25f, 0, 0), -Vector3.up, distToGround + 0.05f)
-            || Physics.Raycast(rb.transform.position + new Vector3(-0.25f, 0, 0), -Vector3.up, distToGround + 0.05f)
-            || Physics.Raycast(rb.transform.position + new Vector3(0, 0, 0.25f), -Vector3.up, distToGround + 0.05f)
-            || Physics.Raycast(rb.transform.position + new Vector3(0, 0, -0.25f), -Vector3.up, distToGround + 0.05f);
+            || Physics.Raycast(rb.transform.position + rb.transform.forward * dist, -Vector3.up, distToGround + 0.05f)
+            || Physics.Raycast(rb.transform.position - rb.transform.forward * dist, -Vector3.up, distToGround + 0.05f)
+            || Physics.Raycast(rb.transform.position + rb.transform.right * dist, -Vector3.up, distToGround + 0.05f)
+            || Physics.Raycast(rb.transform.position - rb.transform.right * dist, -Vector3.up, distToGround + 0.05f);
     }
 }
