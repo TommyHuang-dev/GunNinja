@@ -54,8 +54,8 @@ public class GrappleHook : MonoBehaviour
 
         if (otherScript.isGrappling)
         {
-            // release grapple on keyup
-            if (mouse.rightButton.wasReleasedThisFrame)
+            // release grapple on keyup or if too far away
+            if ( (rb.transform.position - grapplePoint).magnitude > hookRange * 1.2 || mouse.rightButton.wasReleasedThisFrame)
             {
                 otherScript.isGrappling = false;
             }
@@ -94,8 +94,12 @@ public class GrappleHook : MonoBehaviour
         if (grapplePoint.x != 0 && grapplePoint.y != 0 && otherScript.isGrappling)
         {
             Gizmos.color = Color.black;
-            Gizmos.DrawSphere(grapplePoint, 0.15f);
             Gizmos.DrawLine(rb.transform.position, grapplePoint);
+            if (hitObject.layer == 10)
+            {
+                Gizmos.color = Color.cyan;
+            }
+            Gizmos.DrawSphere(grapplePoint, 0.15f);
         }
     }
 }
