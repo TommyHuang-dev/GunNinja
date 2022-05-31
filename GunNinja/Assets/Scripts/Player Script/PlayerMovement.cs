@@ -9,14 +9,14 @@ public class PlayerMovement : MonoBehaviour
     Camera cam;
     float accel;
 
-    float groundAccel = 1.0f;
-    float groundDrag = 8f;
+    float groundAccel = 0.4f;
+    float groundDrag = 4f;
     float airAccel = 0.04f;
-    float airDrag = 0.2f;
-    float maxRunSpeed = 10;  // soft max speed
+    float airDrag = 0.25f;
+    float maxRunSpeed = 8;  // soft max speed
     float distToGround;
 
-    float jumpStrength = 10f;
+    float jumpStrength = 8f;
     public bool hasDoubleJump;
 
     public bool isGrounded = false;
@@ -114,7 +114,7 @@ public class PlayerMovement : MonoBehaviour
         if (dirVect.magnitude != 0 && Vector3.Angle(horizVect(newVelVect), horizVect(curVelVect)) < 60)
         {
             float angleCoeff = 20f / (20f + Vector3.Angle(horizVect(newVelVect), horizVect(curVelVect)));
-            float coeff = 0.075f / 100;
+            float coeff = 0.06f / 100;
             if (isGrounded)
             {
                 coeff *= 2f;

@@ -5,9 +5,9 @@ using UnityEngine.InputSystem;
 
 public class GrappleHook : MonoBehaviour
 {
-    float hookRange = 50;
-    float pullAccel = 0.1f;
-    float softMaxPullSpeed = 30f;  // beyond this point, there will be a lot more "air resistance"
+    float hookRange = 30;
+    float pullAccel = 0.07f;
+    float softMaxPullSpeed = 24f;  // beyond this point, there will be a lot more "air resistance"
     float highVelocityDrag = 0.4f;  // drag coefficient when over softMaxPullpeed
     Rigidbody rb;
     PlayerMovement otherScript;
