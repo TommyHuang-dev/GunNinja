@@ -6,13 +6,15 @@ using UnityEngine.InputSystem;
 public class GrappleHook : MonoBehaviour
 {
     float hookRange = 30;
-    float pullAccel = 0.07f;
+    float pullAccel = 0.1f;
     float softMaxPullSpeed = 24f;  // beyond this point, there will be a lot more "air resistance"
     float highVelocityDrag = 0.4f;  // drag coefficient when over softMaxPullpeed
     Rigidbody rb;
     PlayerMovement otherScript;
 
     Vector3 grapplePoint = new Vector3(0, 0, 0);
+    Vector3 relativeGrapplePoint = new Vector3(0, 0, 0);
+    bool isGrapplingEnemy;
     GameObject hitObject;
 
     // Start is called before the first frame update
@@ -45,6 +47,12 @@ public class GrappleHook : MonoBehaviour
                     otherScript.hasDoubleJump = true;
                     grapplePoint = rayHit.point;
                     hitObject = rayHit.collider.gameObject;
+
+                    isGrapplingEnemy = false;
+                    if (hitObject.layer == 10 && hitObject.GetComponent<Rigidbody>() != null)
+                    {
+                        isGrapplingEnemy = true;
+                    }
                 } else
                 {
                     Debug.DrawRay(rb.transform.position, targetPos - rb.transform.position, Color.black, 0.2f);
@@ -65,11 +73,14 @@ public class GrappleHook : MonoBehaviour
                 Vector3 pullVect = (grapplePoint - rb.transform.position).normalized;
 
                 // 10: Game Physics Objects also get pulled towards the player, player might get pulled less
-                if (hitObject.layer == 10 && hitObject.GetComponent<Rigidbody>() != null)
+                if (isGrapplingEnemy)
                 {
                     Rigidbody targetRB = hitObject.GetComponent<Rigidbody>();
-                    rb.velocity += pullVect * pullAccel * Mathf.Clamp(targetRB.mass / rb.mass, 0.25f, 1);
-                    targetRB.velocity -= (pullVect * pullAccel) * Mathf.Min(rb.mass / targetRB.mass, 2);
+                    float totalMass = targetRB.mass + rb.mass;
+                    // velocity player pulled to target
+                    rb.velocity += pullVect * pullAccel * Mathf.Clamp((targetRB.mass * 1.25f) / totalMass, 0.25f, 1);
+                    // velocity target pulled to player
+                    targetRB.velocity -= (pullVect * pullAccel) * Mathf.Min((rb.mass * 1.25f) / totalMass, 2);
                     grapplePoint += targetRB.velocity * Time.deltaTime;
                 }
                 else
