@@ -6,7 +6,7 @@ public class MovementDrag : MonoBehaviour
 {
     [SerializeField] float groundDrag = 1.0f;
     [SerializeField] float airDrag = 0.25f;
-    [SerializeField] float maxSpeed = 50f;
+    [SerializeField] float softMaxSpeed = 50f;
 
     Rigidbody rb;
 
@@ -30,7 +30,7 @@ public class MovementDrag : MonoBehaviour
             finalDrag = airDrag;
         }
         // limit max speed
-        if (rb.velocity.magnitude > maxSpeed)
+        if (rb.velocity.magnitude > softMaxSpeed)
         {
             finalDrag = Mathf.Max(2.0f, finalDrag * 5);
         }

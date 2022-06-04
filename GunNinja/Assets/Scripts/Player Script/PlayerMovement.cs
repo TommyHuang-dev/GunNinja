@@ -12,7 +12,7 @@ public class PlayerMovement : MonoBehaviour
     float groundAccel = 0.4f;
     float groundDrag = 4f;
     float airAccel = 0.04f;
-    float airDrag = 0.25f;
+    float airDrag = 0.2f;
     float maxRunSpeed = 8;  // soft max speed
     float distToGround;
 
@@ -40,6 +40,8 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        Debug.Log("horizontal speed :" + horizSpeed(rb.velocity));
+
         var keys = Keyboard.current;
         var pointer = Pointer.current;
 
@@ -140,7 +142,6 @@ public class PlayerMovement : MonoBehaviour
             rb.velocity += rb.transform.forward * 100;
         }
         // -----
-        Debug.Log("horizontal speed :" + horizSpeed(rb.velocity));
     }
     Vector3 horizVect(Vector3 vel)
     {
@@ -156,11 +157,11 @@ public class PlayerMovement : MonoBehaviour
 
     bool OnGround()
     {
-        float dist = 0.1f;
+        float dist = 0.05f;
         return Physics.Raycast(rb.transform.position, -Vector3.up, distToGround + 0.1f)
-            || Physics.Raycast(rb.transform.position + rb.transform.forward * dist, -Vector3.up, distToGround + 0.05f)
-            || Physics.Raycast(rb.transform.position - rb.transform.forward * dist, -Vector3.up, distToGround + 0.05f)
-            || Physics.Raycast(rb.transform.position + rb.transform.right * dist, -Vector3.up, distToGround + 0.05f)
-            || Physics.Raycast(rb.transform.position - rb.transform.right * dist, -Vector3.up, distToGround + 0.05f);
+            || Physics.Raycast(rb.transform.position + rb.transform.forward * dist, -Vector3.up, distToGround + 0.04f)
+            || Physics.Raycast(rb.transform.position - rb.transform.forward * dist, -Vector3.up, distToGround + 0.04f)
+            || Physics.Raycast(rb.transform.position + rb.transform.right * dist, -Vector3.up, distToGround + 0.04f)
+            || Physics.Raycast(rb.transform.position - rb.transform.right * dist, -Vector3.up, distToGround + 0.04f);
     }
 }
