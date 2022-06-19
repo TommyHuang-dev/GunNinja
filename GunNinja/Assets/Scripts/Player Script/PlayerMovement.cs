@@ -9,7 +9,7 @@ public class PlayerMovement : MonoBehaviour
     Camera cam;
     float accel;
 
-    float groundAccel = 0.4f;
+    float groundAccel = 0.3f;
     float groundDrag = 4f;
     float airAccel = 0.04f;
     float airDrag = 0.2f;
