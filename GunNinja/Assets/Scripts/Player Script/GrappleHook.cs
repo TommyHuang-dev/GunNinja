@@ -15,6 +15,10 @@ public class GrappleHook : MonoBehaviour
     Vector3 grapplePoint = new Vector3(0, 0, 0);
     Vector3 relativeGrapplePoint = new Vector3(0, 0, 0);
     bool isGrapplingEnemy;
+    
+    public bool grappleReady;
+    float grappleCooldown;
+    float grappleMaxCooldown = 1.5f;
 
     GameObject hitObject;
 
@@ -24,6 +28,8 @@ public class GrappleHook : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         grapplePoint = new Vector3(0, 0, 0);
         otherScript = GetComponent<PlayerMovement>();
+        grappleCooldown = 0;
+        grappleReady = true;
     }
 
     // Update is called once per frame
@@ -31,10 +37,12 @@ public class GrappleHook : MonoBehaviour
     {
         var mouse = Mouse.current;
         var cam = Camera.main;
+
+        advanceGrapplingCooldown();
         // try grapple on keydown
         if (!(otherScript.isGrappling))
         {
-            if (mouse.rightButton.wasPressedThisFrame)
+            if (mouse.rightButton.wasPressedThisFrame && grappleReady)
             {
                 float camPosDiff = Mathf.Sqrt(Mathf.Pow(cam.transform.localPosition.z * rb.transform.localScale.z, 2) + Mathf.Pow(cam.transform.localPosition.x * rb.transform.localScale.x, 2));
                 Vector3 startPos = cam.transform.position + cam.transform.forward * camPosDiff;
@@ -42,8 +50,12 @@ public class GrappleHook : MonoBehaviour
 
                 Ray ray = new Ray(startPos, (targetPos - startPos).normalized);
                 RaycastHit rayHit;
+
+                grappleReady = false;
                 if (Physics.Raycast(ray, out rayHit, hookRange))
                 {
+                    grappleCooldown = grappleMaxCooldown;
+
                     otherScript.isGrappling = true;
                     otherScript.hasDoubleJump = true;
                     grapplePoint = rayHit.point;
@@ -53,10 +65,12 @@ public class GrappleHook : MonoBehaviour
                     if (hitObject.layer == 10 && hitObject.GetComponent<Rigidbody>() != null)
                     {
                         isGrapplingEnemy = true;
+                        relativeGrapplePoint = grapplePoint - hitObject.GetComponent<Rigidbody>().transform.position;
                     }
                 } else
                 {
-                    Debug.DrawRay(rb.transform.position, targetPos - rb.transform.position, Color.black, 0.2f);
+                    Debug.DrawRay(rb.transform.position, targetPos - rb.transform.position, Color.black, 0.25f);
+                    grappleCooldown = 0.25f;
                 }
             }
         }
@@ -101,6 +115,23 @@ public class GrappleHook : MonoBehaviour
             }
         }
     }
+
+    void advanceGrapplingCooldown()
+    {
+        if (grappleCooldown > 0)
+        {
+            grappleCooldown -= Time.deltaTime;
+            if (otherScript.isGrappling)
+            {
+                grappleCooldown = Mathf.Max(grappleCooldown, 0.05f);
+            }
+            else if (grappleCooldown <= 0)
+            {
+                grappleReady = true;
+            }
+        }
+    }
+
     void OnDrawGizmos()
     {
         if (grapplePoint.x != 0 && grapplePoint.y != 0 && otherScript.isGrappling)

@@ -40,7 +40,7 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Debug.Log("speed :" + rb.velocity.magnitude + "  horizontal: " + horizSpeed(rb.velocity));
+        //Debug.Log("speed :" + rb.velocity.magnitude + "  horizontal: " + horizSpeed(rb.velocity));
 
         var keys = Keyboard.current;
         var pointer = Pointer.current;
