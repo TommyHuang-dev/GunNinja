@@ -9,11 +9,11 @@ public class PlayerMovement : MonoBehaviour
     Camera cam;
     float accel;
 
-    float groundAccel = 0.3f;
-    float groundDrag = 4f;
+    float groundAccel = 0.4f;
+    float groundDrag = 5f;
     float airAccel = 0.04f;
     float airDrag = 0.2f;
-    float maxRunSpeed = 8;  // soft max speed
+    float maxRunSpeed = 10;  // soft max speed
     float distToGround;
 
     float jumpStrength = 8f;
@@ -40,7 +40,7 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Debug.Log("horizontal speed :" + horizSpeed(rb.velocity));
+        Debug.Log("speed :" + rb.velocity.magnitude + "  horizontal: " + horizSpeed(rb.velocity));
 
         var keys = Keyboard.current;
         var pointer = Pointer.current;
@@ -72,7 +72,7 @@ public class PlayerMovement : MonoBehaviour
                 // stop character from flying going over small ramps
                 Ray ray = new Ray(rb.transform.position + new Vector3(0, 0.1f, 0), -Vector3.up);
                 RaycastHit rayHit;
-                if (Physics.Raycast(ray, out rayHit, distToGround + 0.25f)) {
+                if (Physics.Raycast(ray, out rayHit, distToGround + 0.2f)) {
                     rb.MovePosition(rb.transform.position + new Vector3(0, - rayHit.distance + distToGround + 0.1f, 0));
                 }
             }
@@ -86,8 +86,9 @@ public class PlayerMovement : MonoBehaviour
                 hasDoubleJump = false;
                 // soft reset if falling downwards
                 if (rb.velocity.y < 0) { rb.velocity = new Vector3(rb.velocity.x, rb.velocity.y * 0.25f, rb.velocity.z); }
-                rb.velocity += new Vector3(0, jumpStrength * 0.6f, 0);
-                accel = groundAccel * 2;  // burst of acceleration during double jump
+                float doubleJumpStrength = Mathf.Clamp(jumpStrength - (rb.velocity.y * 0.8f), jumpStrength / 4, jumpStrength);
+                rb.velocity += new Vector3(0, doubleJumpStrength, 0);
+                accel = airAccel * 15;  // burst of acceleration during double jump
             }
         }
 
@@ -119,7 +120,7 @@ public class PlayerMovement : MonoBehaviour
             float coeff = 0.06f / 100;
             if (isGrounded)
             {
-                coeff *= 2f;
+                coeff *= 2.5f;
             }
             curVelVect += curVelVect.normalized * curVelVect.magnitude * rb.drag * coeff * angleCoeff;
         }

@@ -6,15 +6,16 @@ using UnityEngine.InputSystem;
 public class GrappleHook : MonoBehaviour
 {
     float hookRange = 30;
-    float pullAccel = 0.1f;
-    float softMaxPullSpeed = 24f;  // beyond this point, there will be a lot more "air resistance"
-    float highVelocityDrag = 0.4f;  // drag coefficient when over softMaxPullpeed
+    float pullAccel = 0.085f;
+    float softMaxPullSpeed = 25f;  // beyond this point, there will be a lot more "air resistance"
+    float highVelocityDrag = 0.5f;  // drag coefficient when over softMaxPullpeed
     Rigidbody rb;
     PlayerMovement otherScript;
 
     Vector3 grapplePoint = new Vector3(0, 0, 0);
     Vector3 relativeGrapplePoint = new Vector3(0, 0, 0);
     bool isGrapplingEnemy;
+
     GameObject hitObject;
 
     // Start is called before the first frame update
@@ -63,7 +64,7 @@ public class GrappleHook : MonoBehaviour
         if (otherScript.isGrappling)
         {
             // release grapple on keyup or if too far away
-            if ( (rb.transform.position - grapplePoint).magnitude > hookRange * 1.2 || mouse.rightButton.wasReleasedThisFrame)
+            if ( (rb.transform.position - grapplePoint).magnitude > hookRange * 1.5 || mouse.rightButton.wasReleasedThisFrame)
             {
                 otherScript.isGrappling = false;
             }
@@ -80,7 +81,7 @@ public class GrappleHook : MonoBehaviour
                     // velocity player pulled to target
                     rb.velocity += pullVect * pullAccel * Mathf.Clamp((targetRB.mass * 1.25f) / totalMass, 0.25f, 1);
                     // velocity target pulled to player
-                    targetRB.velocity -= (pullVect * pullAccel) * Mathf.Min((rb.mass * 1.25f) / totalMass, 2);
+                    targetRB.velocity -= (pullVect * pullAccel) * Mathf.Min((rb.mass * 1.5f) / totalMass, 2);
                     grapplePoint += targetRB.velocity * Time.deltaTime;
                 }
                 else
